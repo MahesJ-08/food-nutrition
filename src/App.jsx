@@ -1,40 +1,37 @@
-import React, { useState , useEffect} from 'react';
-import FoodForm from './components/FoodForm';
-import FoodTable from './components/FoodTable';
-import './App.css'
+import React, { useState, useEffect } from "react";
+import FoodForm from "./components/FoodForm.jsx";
+import FoodTable from "./components/FoodTable.jsx";
+import "./App.css";
 
 function App() {
+  const [foods, setFoods] = useState(() => {
+    const storedFoods = localStorage.getItem("foods");
+    return storedFoods ? JSON.parse(storedFoods) : [];
+  });
 
-  const [foods, setFoods] = useState([]);
   const [editItem, setEditItem] = useState(null);
-
-  useEffect(() => {
-    const storedFoods = JSON.parse(localStorage.getItem("foods"));
-    
-    if(storedFoods)
-    {
-      setFoods(storedFoods);
-    }
-  }, []);
 
   useEffect(() => {
     localStorage.setItem("foods", JSON.stringify(foods));
   }, [foods]);
 
   const handleSave = (food) => {
-    if(editItem)
-    {
-      const updateFoods = foods.map((item) => item.id === food.id ? food : item);
-      setFoods(updateFoods);
+    if (editItem) {
+      const updatedFoods = foods.map((item) =>
+        item.id === editItem.id ? { ...food, id: editItem.id } : item
+      );
+      setFoods(updatedFoods);
       setEditItem(null);
-      alert("Food item updated successfully");
+      alert("Food updated successfully");
+    } else {
+      setFoods([...foods, { ...food, id: Date.now() }]);
+      alert("Food added successfully");
     }
-    else
-    {
-      setFoods([...foods, {...food, id: Date.now()}]);
-      alert("Food item added successfully");
-    }
-    console.log([...foods, food]);
+  };
+
+  const handleBulkSave = (newFoods) => {
+    setFoods((prev) => [...prev, ...newFoods]);
+    alert("Excel data uploaded successfully");
   };
 
   const handleEdit = (food) => {
@@ -42,37 +39,24 @@ function App() {
   };
 
   const handleDelete = (id) => {
-    if(window.confirm("Are you sure you want to delete this item?"))
-    {
-      const filteredFoods = foods.filter((item) => item.id !== id);
-      setFoods(filteredFoods);
-      alert("Food item deleted successfully");
+    if (window.confirm("Are you sure?")) {
+      setFoods(foods.filter((item) => item.id !== id));
     }
   };
 
   return (
-    <>
-      {/* <div className='container'> */}
-        <h1 className='text-center text-dark my-3'>Food Nutrition Tracker</h1>
-          <div className="row justify-content-center">
-              <div className="col-md-6 col-lg-4">
-                <FoodForm
-                onSave = {handleSave}
-                editItem = {editItem}
-                />
-              </div>
-              <div className="col-md-6 col-lg-8">
-                <FoodTable
-                foods = {foods}
-                onEdit = {handleEdit}
-                onDelete = {handleDelete}
-                />
-              </div>
-          </div>
-      {/* </div> */}
-    </>
-  )
-  
+    <div className="container my-4">
+      <h2 className="text-center fw-bold mb-4">Food Nutrition Tracker</h2>
+
+      <FoodForm
+        onSave={handleSave}
+        onSaveBulk={handleBulkSave}
+        editItem={editItem}
+      />
+
+      <FoodTable foods={foods} onEdit={handleEdit} onDelete={handleDelete} />
+    </div>
+  );
 }
 
-export default App
+export default App;
