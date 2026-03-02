@@ -98,7 +98,7 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
   const reader = new FileReader();
 
   reader.onload = (event) => {
-    if (!event.target.result) return;  // ✅ Prevent duplicate
+    if (!event.target.result) return;  
 
     const data = new Uint8Array(event.target.result);
     const workbook = XLSX.read(data, { type: "array" });

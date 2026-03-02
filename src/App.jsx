@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import FoodForm from "./components/FoodForm.jsx";
-import FoodTable from "./components/FoodTable.jsx";
-import "./App.css";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import AdminDashboard from "./components/AdminDashboard";
+import UserDashboard from "./components/UserDashboard";
 
 function App() {
+
+  // ---------------- FOOD STATE ----------------
   const [foods, setFoods] = useState(() => {
     const storedFoods = localStorage.getItem("foods");
     return storedFoods ? JSON.parse(storedFoods) : [];
@@ -15,6 +18,23 @@ function App() {
     localStorage.setItem("foods", JSON.stringify(foods));
   }, [foods]);
 
+  // ---------------- AUTH STATE ----------------
+  const [currentUser, setCurrentUser] = useState(() => {
+    const storedUser = localStorage.getItem("currentUser");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  const [showRegister, setShowRegister] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("currentUser");
+    }
+  }, [currentUser]);
+
+  // ---------------- FOOD FUNCTIONS ----------------
   const handleSave = (food) => {
     if (editItem) {
       const updatedFoods = foods.map((item) =>
@@ -22,21 +42,18 @@ function App() {
       );
       setFoods(updatedFoods);
       setEditItem(null);
-      alert("Food updated successfully");
+       alert("Food updated successfully");
     } else {
       setFoods([...foods, { ...food, id: Date.now() }]);
-      alert("Food added successfully");
+       alert("Food added successfully");
     }
   };
 
   const handleBulkSave = (newFoods) => {
     setFoods((prev) => [...prev, ...newFoods]);
-    alert("Excel data uploaded successfully");
   };
 
-  const handleEdit = (food) => {
-    setEditItem(food);
-  };
+  const handleEdit = (food) => setEditItem(food);
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure?")) {
@@ -44,18 +61,44 @@ function App() {
     }
   };
 
-  return (
-    <div className="container my-4">
-      <h2 className="text-center fw-bold mb-4">Food Nutrition Tracker</h2>
+  const handleLogout = () => setCurrentUser(null);
 
-      <FoodForm
-        onSave={handleSave}
-        onSaveBulk={handleBulkSave}
+  // ---------------- RENDER ----------------
+  if (!currentUser) {
+    return (
+      <div className="container mt-5">
+        {showRegister ? (
+          <Register onSwitch={() => setShowRegister(false)} />
+        ) : (
+          <Login
+            setCurrentUser={setCurrentUser}
+            onSwitch={() => setShowRegister(true)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (currentUser.role === "admin") {
+    return (
+      <AdminDashboard
+        foods={foods}
         editItem={editItem}
+        handleSave={handleSave}
+        handleBulkSave={handleBulkSave}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        handleLogout={handleLogout}
       />
+    );
+  }
 
-      <FoodTable foods={foods} onEdit={handleEdit} onDelete={handleDelete} />
-    </div>
+  return (
+    <UserDashboard
+      user={currentUser}
+      foods={foods}
+      onLogout={handleLogout}
+    />
   );
 }
 
