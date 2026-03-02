@@ -36,17 +36,67 @@ function Login({ setCurrentUser, onSwitch }) {
   };
 
   return (
-    <div className="card p-4 shadow">
-      <h3>Login</h3>
-      {error && <p className="text-danger">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input className="form-control mb-2" name="email" placeholder="Email" onChange={handleChange}/>
-        <input className="form-control mb-2" type="password" name="password" placeholder="Password" onChange={handleChange}/>
-        <button className="btn btn-primary w-100">Login</button>
-      </form>
-      <p className="mt-3">
-        Don’t have account? <span onClick={onSwitch} style={{cursor:"pointer"}}>Register</span>
-      </p>
+    <div className="container d-flex justify-content-center align-items-center">
+      <div 
+        className="card shadow-lg border-0 rounded-4 p-4"
+        style={{ maxWidth: "450px", width: "100%" }}
+      >
+        
+        <div className="text-center mb-4">
+          <h2 className="fw-bold text-primary">Welcome Back</h2>
+          <p className="text-muted small">Login to your account</p>
+        </div>
+
+        {error && (
+          <div className="alert alert-danger py-2 text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+
+          <div className="form-floating mb-3">
+            <input
+              type="email"
+              className="form-control rounded-3"
+              name="email"
+              placeholder="Email"
+              onChange={handleChange}
+            />
+            <label>Email Address</label>
+          </div>
+
+          <div className="form-floating mb-4">
+            <input
+              type="password"
+              className="form-control rounded-3"
+              name="password"
+              placeholder="Password"
+              onChange={handleChange}
+            />
+            <label>Password</label>
+          </div>
+
+          <button className="btn btn-primary w-100 py-2 rounded-3 fw-semibold">
+            Login
+          </button>
+
+        </form>
+
+        <div className="text-center mt-4">
+          <small className="text-muted">
+            Don’t have an account?{" "}
+            <span
+              className="text-primary fw-semibold"
+              onClick={onSwitch}
+              style={{ cursor: "pointer" }}
+            >
+              Register
+            </span>
+          </small>
+        </div>
+
+      </div>
     </div>
   );
 }

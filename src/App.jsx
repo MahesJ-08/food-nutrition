@@ -6,7 +6,6 @@ import UserDashboard from "./components/UserDashboard";
 
 function App() {
 
-  // ---------------- FOOD STATE ----------------
   const [foods, setFoods] = useState(() => {
     const storedFoods = localStorage.getItem("foods");
     return storedFoods ? JSON.parse(storedFoods) : [];
@@ -18,7 +17,6 @@ function App() {
     localStorage.setItem("foods", JSON.stringify(foods));
   }, [foods]);
 
-  // ---------------- AUTH STATE ----------------
   const [currentUser, setCurrentUser] = useState(() => {
     const storedUser = localStorage.getItem("currentUser");
     return storedUser ? JSON.parse(storedUser) : null;
@@ -34,7 +32,6 @@ function App() {
     }
   }, [currentUser]);
 
-  // ---------------- FOOD FUNCTIONS ----------------
   const handleSave = (food) => {
     if (editItem) {
       const updatedFoods = foods.map((item) =>
@@ -63,7 +60,6 @@ function App() {
 
   const handleLogout = () => setCurrentUser(null);
 
-  // ---------------- RENDER ----------------
   if (!currentUser) {
     return (
       <div className="container mt-5">

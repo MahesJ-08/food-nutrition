@@ -8,7 +8,8 @@ const defaultState = {
   protein: "",
   carbs: "",
   fats: "",
-  servingSize: "",
+  servingQuantity: "",
+  servingUnit: "",
   vegetarian: false,
   date: new Date().toISOString().split("T")[0],
 };
@@ -48,8 +49,11 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
     if (!formData.category)
       newErrors.category = "Category is required";
 
-    if (!formData.servingSize.trim())
-      newErrors.servingSize = "Serving size is required";
+    if (!formData.servingQuantity || !numberRegex.test(formData.servingQuantity))
+      newErrors.servingQuantity = "Enter valid quantity";
+
+    if (!formData.servingUnit)
+      newErrors.servingUnit = "Select unit";
 
     if (!formData.calories || !numberRegex.test(formData.calories))
       newErrors.calories = "Enter valid calories";
@@ -78,6 +82,8 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
 
     onSave({
       ...formData,
+      servingQuantity: parseFloat(formData.servingQuantity).toFixed(2),
+      calories: parseFloat(formData.calories).toFixed(2),
       protein: parseFloat(formData.protein).toFixed(2),
       carbs: parseFloat(formData.carbs).toFixed(2),
       fats: parseFloat(formData.fats).toFixed(2),
@@ -92,62 +98,65 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
   };
 
   const handleFileUpload = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const reader = new FileReader();
+    const reader = new FileReader();
 
-  reader.onload = (event) => {
-    if (!event.target.result) return;  
+    reader.onload = (event) => {
+      if (!event.target.result) return;
 
-    const data = new Uint8Array(event.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
 
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-    const formattedData = jsonData.map((row) => ({
-      id: Date.now() + Math.random(),
-      foodName: row.foodName ?? "",
-      category: row.category ?? "",
-      calories: row.calories ?? 0,
-      protein: row.protein ?? 0,
-      carbs: row.carbs ?? 0,
-      fats: row.fats ?? 0,
-      servingSize: row.servingSize ?? "",
-      vegetarian:
-        row.vegetarian === "Yes" || row.vegetarian === true,
-      date:
-        row.date ?? new Date().toISOString().split("T")[0],
-    }));
+      const formattedData = jsonData.map((row) => ({
+        id: Date.now() + Math.random(),
+        foodName: row.foodName ?? "",
+        category: row.category ?? "",
+        calories: row.calories ?? 0,
+        protein: row.protein ?? 0,
+        carbs: row.carbs ?? 0,
+        fats: row.fats ?? 0,
+        servingQuantity: row.servingQuantity ?? 0,
+        servingUnit: row.servingUnit ?? "",
+        vegetarian:
+          row.vegetarian === "Yes" || row.vegetarian === true,
+        date:
+          row.date ?? new Date().toISOString().split("T")[0],
+      }));
 
-    onSaveBulk(formattedData);
+      onSaveBulk(formattedData);
+      alert("Excel data uploaded successfully");
+      e.target.value = null;
+    };
 
-    alert("Excel data uploaded successfully");
-
-    e.target.value = null;
+    reader.readAsArrayBuffer(file);
+    
   };
 
-  reader.readAsArrayBuffer(file);
-};
-
   return (
-    <>
-      <div className="card shadow-lg border-0 rounded-4">
-        <div className="card-header bg-success text-white text-center rounded-top-4">
-          <h4 className="mb-0 fw-bold">
+    <div className="container-fluid">
+      <div className="card shadow border-0 rounded-4">
+        
+        <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
+          <h5 className="mb-0 fw-bold">
             {editItem ? "Update Food Entry" : "Add Food Entry"}
-          </h4>
+          </h5>
+          <span className="badge bg-light text-dark">
+            {editItem ? "Edit Mode" : "New Entry"}
+          </span>
         </div>
 
         <div className="card-body p-4">
-          {/* Upload Section (No Button) */}
-          <div className="mb-3">
+
+          <div className="mb-4">
             <label className="form-label fw-semibold">
               Upload Excel File
             </label>
-
             <input
               type="file"
               className="form-control"
@@ -157,24 +166,23 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-floating mb-3">
+
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Food Name</label>
               <input
                 type="text"
                 name="foodName"
                 className="form-control rounded-3"
-                placeholder="Food Name"
                 value={formData.foodName}
                 onChange={handleChange}
               />
-              <label>Food Name</label>
               {errors.foodName && (
-                <small className="text-danger">
-                  {errors.foodName}
-                </small>
+                <div className="text-danger small">{errors.foodName}</div>
               )}
             </div>
 
-            <div className="form-floating mb-3">
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Category</label>
               <select
                 name="category"
                 className="form-select rounded-3"
@@ -189,58 +197,77 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                 <option>Dairy</option>
                 <option>Snack</option>
               </select>
-              <label>Category</label>
               {errors.category && (
-                <small className="text-danger">
-                  {errors.category}
-                </small>
+                <div className="text-danger small">{errors.category}</div>
               )}
             </div>
 
             <div className="row">
-              {["calories", "protein", "carbs", "fats"].map(
-                (field) => (
-                  <div className="col-md-6 mb-3" key={field}>
-                    <div className="form-floating">
-                      <input
-                        type="number"
-                        step="0.01"
-                        name={field}
-                        className="form-control rounded-3"
-                        placeholder={field}
-                        value={formData[field]}
-                        onChange={handleChange}
-                      />
-                      <label>
-                        {field.charAt(0).toUpperCase() +
-                          field.slice(1)}
-                      </label>
-                      {errors[field] && (
-                        <small className="text-danger">
-                          {errors[field]}
-                        </small>
-                      )}
-                    </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">
+                  Serving Quantity
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="servingQuantity"
+                  className="form-control rounded-3"
+                  value={formData.servingQuantity}
+                  onChange={handleChange}
+                />
+                {errors.servingQuantity && (
+                  <div className="text-danger small">
+                    {errors.servingQuantity}
                   </div>
-                )
-              )}
+                )}
+              </div>
+
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">
+                  Serving Unit
+                </label>
+                <select
+                  name="servingUnit"
+                  className="form-select rounded-3"
+                  value={formData.servingUnit}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Unit</option>
+                  <option>grams</option>
+                  <option>ml</option>
+                  <option>piece</option>
+                  <option>cup</option>
+                  <option>tbsp</option>
+                </select>
+                {errors.servingUnit && (
+                  <div className="text-danger small">
+                    {errors.servingUnit}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="form-floating mb-3">
-              <input
-                type="text"
-                name="servingSize"
-                className="form-control rounded-3"
-                placeholder="Serving Size"
-                value={formData.servingSize}
-                onChange={handleChange}
-              />
-              <label>Serving Size</label>
-              {errors.servingSize && (
-                <small className="text-danger">
-                  {errors.servingSize}
-                </small>
-              )}
+            <div className="row">
+              {["calories", "protein", "carbs", "fats"].map((field) => (
+                <div className="col-md-6 mb-3" key={field}>
+                  <label className="form-label fw-semibold">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name={field}
+                    className="form-control rounded-3"
+                    value={formData[field]}
+                    onChange={handleChange}
+                  />
+                  {errors[field] && (
+                    <div className="text-danger small">
+                      {errors[field]}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="form-check form-switch mb-3">
@@ -256,7 +283,8 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
               </label>
             </div>
 
-            <div className="form-floating mb-4">
+            <div className="mb-4">
+              <label className="form-label fw-semibold">Date</label>
               <input
                 type="date"
                 name="date"
@@ -264,34 +292,34 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                 value={formData.date}
                 onChange={handleChange}
               />
-              <label>Date</label>
               {errors.date && (
-                <small className="text-danger">
-                  {errors.date}
-                </small>
+                <div className="text-danger small">{errors.date}</div>
               )}
             </div>
-
-            <div className="d-flex gap-2">
+ 
+            <div className="d-flex flex-column flex-md-row gap-2">
               <button
                 type="submit"
-                className="btn btn-success btn-lg rounded-3 w-50"
+                className="btn btn-success rounded-3 w-100"
               >
                 {editItem ? "Update Food" : "Add Food"}
               </button>
 
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-lg rounded-3 w-50"
-                onClick={handleClear}
-              >
-                Reset
-              </button>
+              {!editItem && (
+                <button
+                  type="button"
+                  className="btn btn-outline-danger rounded-3 w-100"
+                  onClick={handleClear}
+                >
+                  Reset
+                </button>
+              )}
             </div>
+
           </form>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

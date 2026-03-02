@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from "react";
 
 function UserDashboard({ user, foods, onLogout }) {
-
   const [category, setCategory] = useState("");
   const [selectedFood, setSelectedFood] = useState("");
-  const [serving, setServing] = useState("");
+  const [servingQuantity, setServingQuantity] = useState("");
+  const [servingUnit, setServingUnit] = useState("");
 
   const [filteredFoods, setFilteredFoods] = useState([]);
-
   const [intakes, setIntakes] = useState([]);
 
-  // ---------------- LOAD USER INTAKES ----------------
   useEffect(() => {
     const allIntakes = JSON.parse(localStorage.getItem("intakes")) || {};
     setIntakes(allIntakes[user.email] || []);
   }, [user.email]);
 
-  // ---------------- FILTER FOOD BY CATEGORY ----------------
+
   useEffect(() => {
     if (category) {
       const filtered = foods.filter(
@@ -28,9 +26,9 @@ function UserDashboard({ user, foods, onLogout }) {
     }
   }, [category, foods]);
 
-  // ---------------- CALCULATION ----------------
-  const calculateNutrition = (food, intakeServing) => {
-    const ratio = intakeServing / food.servingSize;
+
+  const calculateNutrition = (food, intakeQty) => {
+    const ratio = intakeQty / food.servingQuantity;
 
     return {
       calories: (food.calories * ratio).toFixed(2),
@@ -40,28 +38,38 @@ function UserDashboard({ user, foods, onLogout }) {
     };
   };
 
-  // ---------------- SUBMIT ----------------
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!selectedFood || !serving) {
-      return alert("Please select food and enter serving size");
+    if (!selectedFood || !servingQuantity || !servingUnit) {
+      return alert("Please complete all fields");
     }
 
-    const food = foods.find((f) => f.id === Number(selectedFood));
+    if (Number(servingQuantity) <= 0) {
+      return alert("Serving quantity must be greater than 0");
+    }
 
-    const nutrition = calculateNutrition(food, Number(serving));
+    const food = foods.find(
+      (f) => f.id === Number(selectedFood)
+    );
+
+    const nutrition = calculateNutrition(
+      food,
+      Number(servingQuantity)
+    );
 
     const newIntake = {
       id: Date.now(),
       foodName: food.foodName,
       category: food.category,
-      serving,
+      servingDisplay: `${servingQuantity} ${servingUnit}`,
       ...nutrition,
       date: new Date().toLocaleDateString(),
     };
 
-    const allIntakes = JSON.parse(localStorage.getItem("intakes")) || {};
+    const allIntakes =
+      JSON.parse(localStorage.getItem("intakes")) || {};
 
     const updatedUserIntakes = [
       ...(allIntakes[user.email] || []),
@@ -70,104 +78,212 @@ function UserDashboard({ user, foods, onLogout }) {
 
     allIntakes[user.email] = updatedUserIntakes;
 
-    localStorage.setItem("intakes", JSON.stringify(allIntakes));
+    localStorage.setItem(
+      "intakes",
+      JSON.stringify(allIntakes)
+    );
 
     setIntakes(updatedUserIntakes);
 
-    setServing("");
+    setServingQuantity("");
+    setServingUnit("");
     setSelectedFood("");
   };
 
+
+  const handleDelete = (id) => {
+    const allIntakes =
+      JSON.parse(localStorage.getItem("intakes")) || {};
+
+    const updatedUserIntakes = intakes.filter(
+      (item) => item.id !== id
+    );
+
+    allIntakes[user.email] = updatedUserIntakes;
+
+    localStorage.setItem(
+      "intakes",
+      JSON.stringify(allIntakes)
+    );
+
+    setIntakes(updatedUserIntakes);
+  };
+
   return (
-    <div className="container mt-5">
+    <div className="container-fluid bg-light min-vh-100 py-4">
+      <div className="container">
 
-      <div className="d-flex justify-content-between mb-4">
-        <h3>Welcome {user.name}</h3>
-        <button className="btn btn-danger" onClick={onLogout}>
-          Logout
-        </button>
-      </div>
-
-      {/* ---------------- FORM ---------------- */}
-
-      <div className="card p-4 shadow mb-4">
-        <h5>Add Food Intake</h5>
-
-        <form onSubmit={handleSubmit}>
-
-          <select
-            className="form-select mb-3"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+          <h3 className="fw-bold text-success mb-3 mb-md-0">
+            Welcome, {user.name}
+          </h3>
+          <button
+            className="btn btn-outline-danger px-4"
+            onClick={onLogout}
           >
-            <option value="">Select Category</option>
-            {[...new Set(foods.map((f) => f.category))].map((cat) => (
-              <option key={cat}>{cat}</option>
-            ))}
-          </select>
-
-          <select
-            className="form-select mb-3"
-            value={selectedFood}
-            onChange={(e) => setSelectedFood(e.target.value)}
-          >
-            <option value="">Select Food</option>
-            {filteredFoods.map((food) => (
-              <option key={food.id} value={food.id}>
-                {food.foodName}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            placeholder="Intake Serving Size"
-            className="form-control mb-3"
-            value={serving}
-            onChange={(e) => setServing(e.target.value)}
-          />
-
-          <button className="btn btn-success w-100">
-            Add Intake
+            Logout
           </button>
-        </form>
+        </div>
+
+        <div className="card shadow border-0 rounded-4 mb-4">
+          <div className="card-body p-4">
+            <h5 className="fw-semibold text-success mb-4">
+              Add Food Intake
+            </h5>
+
+            <form onSubmit={handleSubmit}>
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">
+                  Category
+                </label>
+                <select
+                  className="form-select rounded-3"
+                  value={category}
+                  onChange={(e) =>
+                    setCategory(e.target.value)
+                  }
+                >
+                  <option value="">Select Category</option>
+                  {[...new Set(foods.map((f) => f.category))].map(
+                    (cat) => (
+                      <option key={cat}>{cat}</option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">
+                  Food Item
+                </label>
+                <select
+                  className="form-select rounded-3"
+                  value={selectedFood}
+                  onChange={(e) =>
+                    setSelectedFood(e.target.value)
+                  }
+                >
+                  <option value="">Select Food</option>
+                  {filteredFoods.map((food) => (
+                    <option
+                      key={food.id}
+                      value={food.id}
+                    >
+                      {food.foodName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="row g-3 mb-4">
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Serving Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Enter quantity"
+                    className="form-control rounded-3"
+                    value={servingQuantity}
+                    onChange={(e) =>
+                      setServingQuantity(e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Serving Unit
+                  </label>
+                  <select
+                    className="form-select rounded-3"
+                    value={servingUnit}
+                    onChange={(e) =>
+                      setServingUnit(e.target.value)
+                    }
+                  >
+                    <option value="">Select Unit</option>
+                    <option value="g">Gram (g)</option>
+                    <option value="ml">Milliliter (ml)</option>
+                    <option value="cup">Cup</option>
+                    <option value="piece">Piece</option>
+                    <option value="tbsp">Tablespoon</option>
+                  </select>
+                </div>
+              </div>
+
+              <button className="btn btn-success w-100 py-2 rounded-3 fw-semibold">
+                Add Intake
+              </button>
+
+            </form>
+          </div>
+        </div>
+
+        <div className="card shadow border-0 rounded-4">
+          <div className="card-body p-4">
+            <h5 className="fw-semibold text-success mb-4">
+              Intake History
+            </h5>
+
+            <div className="table-responsive">
+              <table className="table table-hover align-middle text-center">
+                <thead className="table-success">
+                  <tr>
+                    <th>Food</th>
+                    <th>Category</th>
+                    <th>Serving</th>
+                    <th>Calories</th>
+                    <th>Protein</th>
+                    <th>Carbs</th>
+                    <th>Fats</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {intakes.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" className="text-muted py-4">
+                        No intake records found
+                      </td>
+                    </tr>
+                  ) : (
+                    intakes.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.foodName}</td>
+                        <td>{item.category}</td>
+                        <td>{item.servingDisplay}</td>
+                        <td>{item.calories}</td>
+                        <td>{item.protein}</td>
+                        <td>{item.carbs}</td>
+                        <td>{item.fats}</td>
+                        <td>{item.date}</td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() =>
+                              handleDelete(item.id)
+                            }
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+
+              </table>
+            </div>
+
+          </div>
+        </div>
+
       </div>
-
-      {/* ---------------- TABLE ---------------- */}
-
-      <div className="card p-4 shadow">
-        <h5>Intake History</h5>
-
-        <table className="table table-bordered text-center">
-          <thead className="table-success">
-            <tr>
-              <th>Food</th>
-              <th>Category</th>
-              <th>Serving</th>
-              <th>Calories</th>
-              <th>Protein</th>
-              <th>Carbs</th>
-              <th>Fats</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {intakes.map((item) => (
-              <tr key={item.id}>
-                <td>{item.foodName}</td>
-                <td>{item.category}</td>
-                <td>{item.serving}</td>
-                <td>{item.calories}</td>
-                <td>{item.protein}</td>
-                <td>{item.carbs}</td>
-                <td>{item.fats}</td>
-                <td>{item.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
     </div>
   );
 }
