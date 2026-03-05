@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 function Register({ onSwitch }) {
 
@@ -10,14 +11,16 @@ function Register({ onSwitch }) {
   });
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     const nameRegex = /^[A-Za-z\s]+$/; 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,24 +40,32 @@ function Register({ onSwitch }) {
     if (form.password !== form.confirmPassword) {
       return setError("Passwords do not match");
     }
-    const users = JSON.parse(localStorage.getItem("users")) || [];
 
-    const userExists = users.find((u) => u.email === form.email);
-    if (userExists) {
-      return setError("User already exists");
+    try {
+      const response = await axios.post(
+        "http://localhost/food-api/register.php", // change path
+        {
+          name: form.name,
+          email: form.email,
+          password: form.password
+        }
+      );
+
+      if (response.data.status === "success") {
+        setSuccess("Registration successful!");
+        setTimeout(() => {
+          onSwitch();
+        }, 1500);
+      } else if (response.data.status === "exists") {
+        setError("User already exists");
+      } else {
+        setError("Something went wrong");
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError("Server error");
     }
-
-    users.push({
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      role: "user"
-    });
-
-    localStorage.setItem("users", JSON.stringify(users));
-
-    alert("Registration successful");
-    onSwitch();
   };
 
   return (
@@ -72,56 +83,37 @@ function Register({ onSwitch }) {
           </div>
         )}
 
+        {success && (
+          <div className="alert alert-success py-2 text-center">
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           
           <div className="form-floating mb-3">
-            <input
-              type="text"
-              className="form-control rounded-3"
-              name="name"
-              placeholder="Full Name"
-              onChange={handleChange}
-            />
+            <input type="text" className="form-control" name="name" placeholder="Full Name" onChange={handleChange} />
             <label>Full Name</label>
           </div>
 
           <div className="form-floating mb-3">
-            <input
-              type="email"
-              className="form-control rounded-3"
-              name="email"
-              placeholder="Email"
-              onChange={handleChange}
-            />
+            <input type="email" className="form-control" name="email" placeholder="Email" onChange={handleChange} />
             <label>Email Address</label>
           </div>
 
           <div className="form-floating mb-3">
-            <input
-              type="password"
-              className="form-control rounded-3"
-              name="password"
-              placeholder="Password"
-              onChange={handleChange}
-            />
+            <input type="password" className="form-control" name="password" placeholder="Password" onChange={handleChange} />
             <label>Password</label>
           </div>
 
           <div className="form-floating mb-4">
-            <input
-              type="password"
-              className="form-control rounded-3"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              onChange={handleChange}
-            />
+            <input type="password" className="form-control" name="confirmPassword" placeholder="Confirm Password" onChange={handleChange} />
             <label>Confirm Password</label>
           </div>
 
           <button className="btn btn-success w-100 py-2 rounded-3 fw-semibold">
             Register
           </button>
-
         </form>
 
         <div className="text-center mt-4">

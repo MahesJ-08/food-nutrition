@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import FoodForm from "./FoodForm";
 import FoodTable from "./FoodTable";
 import UserList from "./UserList";
@@ -17,10 +18,21 @@ function AdminDashboard({
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  /* ✅ Fetch users from database */
   useEffect(() => {
-    const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-    setUsers(storedUsers);
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost/food-api/getUsers.php"
+      );
+      setUsers(res.data);
+    } catch (error) {
+      console.error("Error fetching users", error);
+    }
+  };
 
   return (
     <div className="container-fluid bg-light min-vh-100 py-4">
@@ -48,22 +60,23 @@ function AdminDashboard({
           </div>
         </div>
 
-          <FoodForm
-            onSave={handleSave}
-            editItem={editItem}
-            onSaveBulk={handleBulkSave}
-          />
+        <FoodForm
+          onSave={handleSave}
+          editItem={editItem}
+          onSaveBulk={handleBulkSave}
+        />
 
-          <FoodTable
-            foods={foods}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+        <FoodTable
+          foods={foods}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
-          <UserList
-            users={users}
-            onSelectUser={setSelectedUser}
-          />
+        <UserList
+          users={users}
+          onSelectUser={setSelectedUser}
+        />
+
         {selectedUser && (
           <div className="mt-4">
             <UserIntakeList selectedUser={selectedUser} />

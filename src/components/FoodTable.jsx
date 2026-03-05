@@ -1,5 +1,4 @@
 import React from "react";
-import * as XLSX from "xlsx"; 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -20,15 +19,15 @@ function FoodTable({ foods, onEdit, onDelete }) {
     ];
 
     const tableRows = foods.map((food) => [
-      food.foodName,
+      food.food_name,
       food.category,
       food.calories,
       food.protein,
       food.carbs,
-      food.fats,
-      `${food.servingQuantity} ${food.servingUnit}`,
-      food.vegetarian ? "Yes" : "No",
-      food.date,
+      food.fat,
+      `${food.serving_quantity} ${food.serving_unit}`,
+      food.is_vegetarian == 1 ? "Yes" : "No",
+      food.created_at,
     ]);
 
     autoTable(doc, {
@@ -38,6 +37,7 @@ function FoodTable({ foods, onEdit, onDelete }) {
 
     doc.save("FoodRecords.pdf");
   };
+
   return (
     <div className="container-fluid mt-5">
       <div className="card shadow border-0 rounded-4">
@@ -84,29 +84,29 @@ function FoodTable({ foods, onEdit, onDelete }) {
                   </tr>
                 ) : (
                   foods.map((food) => (
-                    <tr key={food.id}>
+                    <tr key={food.food_id}>
                       <td
                         className="fw-semibold text-truncate"
                         style={{ maxWidth: "150px" }}
                       >
-                        {food.foodName}
+                        {food.food_name}
                       </td>
                       <td>{food.category}</td>
                       <td>{food.calories}</td>
                       <td>{food.protein}</td>
                       <td>{food.carbs}</td>
-                      <td>{food.fats}</td>
+                      <td>{food.fat}</td>
                       <td>
-                        {food.servingQuantity} {food.servingUnit}
+                        {food.serving_quantity} {food.serving_unit}
                       </td>
                       <td>
-                        {food.vegetarian ? (
+                        {food.is_vegetarian == 1 ? (
                           <span className="badge bg-success px-3">Yes</span>
                         ) : (
                           <span className="badge bg-danger px-3">No</span>
                         )}
                       </td>
-                      <td className="text-nowrap">{food.date}</td>
+                      <td className="text-nowrap">{food.created_at}</td>
                       <td className="text-nowrap">
                         <div className="d-flex justify-content-center gap-2">
                           <button
@@ -118,7 +118,7 @@ function FoodTable({ foods, onEdit, onDelete }) {
 
                           <button
                             className="btn btn-sm btn-outline-danger px-3"
-                            onClick={() => onDelete(food.id)}
+                            onClick={() => onDelete(food.food_id)}
                           >
                             Delete
                           </button>

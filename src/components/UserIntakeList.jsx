@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -6,9 +7,21 @@ function UserIntakeList({ selectedUser }) {
   const [intakes, setIntakes] = useState([]);
 
   useEffect(() => {
-    const allIntakes = JSON.parse(localStorage.getItem("intakes")) || {};
-    setIntakes(allIntakes[selectedUser.email] || []);
+    if (selectedUser) {
+      fetchIntakes();
+    }
   }, [selectedUser]);
+
+  const fetchIntakes = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost/food-api/get_user_intake.php?user_id=${selectedUser.user_id}`
+      );
+      setIntakes(res.data);
+    } catch (error) {
+      console.error("Error fetching intake:", error);
+    }
+  };
 
   const downloadPDF = () => {
     const doc = new jsPDF();
@@ -26,15 +39,15 @@ function UserIntakeList({ selectedUser }) {
     ];
 
     const tableRows = intakes.map((item) => [
-      item.foodName,
+      item.food_name,
       item.category,
-      item.servingDisplay,
+      `${item.serving_quantity} ${item.serving_unit}`,
       item.calories,
       item.protein,
       item.carbs,
-      item.fats,
-      item.vegetarian ? "Yes" : "No",
-      item.date,
+      item.fat,
+      item.is_vegetarian == 1 ? "Yes" : "No",
+      item.intake_date,
     ]);
 
     autoTable(doc, {
@@ -43,7 +56,7 @@ function UserIntakeList({ selectedUser }) {
       startY: 20,
     });
 
-    doc.save(`${selectedUser.email}_Intake_Report.pdf`);
+    doc.save(`${selectedUser.name}_Intake_Report.pdf`);
   };
 
   return (
@@ -80,29 +93,33 @@ function UserIntakeList({ selectedUser }) {
                   <th>Protein</th>
                   <th>Carbs</th>
                   <th>Fats</th>
-                  <th>Vegitarian</th>
+                  <th>Vegetarian</th>
                   <th>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {intakes.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-muted py-4">
+                    <td colSpan="9" className="text-muted py-4">
                       No intake records found
                     </td>
                   </tr>
                 ) : (
                   intakes.map((item) => (
-                    <tr key={item.id}>
-                      <td className="fw-semibold">{item.foodName}</td>
+                    <tr key={item.intake_id}>
+                      <td className="fw-semibold">{item.food_name}</td>
                       <td>{item.category}</td>
-                      <td>{item.servingDisplay}</td>
+                      <td>
+                        {item.serving_quantity} {item.serving_unit}
+                      </td>
                       <td>{item.calories}</td>
                       <td>{item.protein}</td>
                       <td>{item.carbs}</td>
-                      <td>{item.fats}</td>
-                      <td>{item.vegetarian ? "Yes" : "No"}</td>
-                      <td>{item.date}</td>
+                      <td>{item.fat}</td>
+                      <td>
+                        {item.is_vegetarian == 1 ? "Yes" : "No"}
+                      </td>
+                      <td>{item.intake_date}</td>
                     </tr>
                   ))
                 )}

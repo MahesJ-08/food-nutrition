@@ -1,14 +1,33 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-function UserList({ users, onSelectUser }) {
+function UserList({ onSelectUser }) {
+  const [users, setUsers] = useState([]);
+
+  // ✅ Fetch users from PHP backend
+  useEffect(() => {
+    axios
+      .get("http://localhost/food-api/getUsers.php") // change path if needed
+      .then((res) => {
+        setUsers(res.data);
+      })
+      .catch((err) => {
+        console.log("Error fetching users:", err);
+      });
+  }, []);
+
+  // ✅ Download PDF
   const downloadPDF = () => {
     const doc = new jsPDF();
 
     const tableColumn = ["Name", "Email"];
 
-    const tableRows = users.map((user) => [user.name, user.email]);
+    const tableRows = users.map((user) => [
+      user.name,
+      user.email,
+    ]);
 
     autoTable(doc, {
       head: [tableColumn],
@@ -23,7 +42,10 @@ function UserList({ users, onSelectUser }) {
       <div className="card shadow border-0 rounded-4">
         <div className="card-body p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h5 className="fw-bold text-primary mb-0">Registered Users</h5>
+            <h5 className="fw-bold text-primary mb-0">
+              Registered Users
+            </h5>
+
             <div className="d-flex gap-2">
               <button
                 className="btn btn-danger btn-sm"
@@ -48,6 +70,7 @@ function UserList({ users, onSelectUser }) {
                   <th style={{ minWidth: "120px" }}>Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {users.length === 0 ? (
                   <tr>
@@ -57,8 +80,10 @@ function UserList({ users, onSelectUser }) {
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user.email}>
-                      <td className="fw-semibold">{user.name}</td>
+                    <tr key={user.id}> {/* ✅ Use id as key */}
+                      <td className="fw-semibold">
+                        {user.name}
+                      </td>
                       <td>{user.email}</td>
                       <td>
                         <button
@@ -72,6 +97,7 @@ function UserList({ users, onSelectUser }) {
                   ))
                 )}
               </tbody>
+
             </table>
           </div>
         </div>

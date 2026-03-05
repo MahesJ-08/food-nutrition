@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 function Login({ setCurrentUser, onSwitch }) {
-
   const [form, setForm] = useState({
     email: "",
-    password: ""
+    password: "",
   });
 
   const [error, setError] = useState("");
@@ -13,48 +13,52 @@ function Login({ setCurrentUser, onSwitch }) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    // Admin Login
-    if (form.email === "admin@gmail.com" && form.password === "admin1234") {
-      setCurrentUser({ email: form.email, role: "admin" });
-      return;
+    // // Admin Login (optional hardcoded)
+    // if (form.email === "admin@gmail.com" && form.password === "admin1234") {
+    //   setCurrentUser({ email: form.email, role: "admin" });
+    //   return;
+    // }
+
+    try {
+      const response = await axios.post("http://localhost/food-api/login.php", {
+        email: form.email,
+        password: form.password,
+      });
+
+      if (response.data.status === "success") {
+        localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+        setCurrentUser(response.data.user);
+      } else if (response.data.status === "invalid") {
+        setError("Invalid credentials");
+      } else {
+        setError("Something went wrong");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Server error");
     }
-
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-
-    const user = users.find(
-      (u) => u.email === form.email && u.password === form.password
-    );
-
-    if (!user) {
-      return setError("Invalid credentials");
-    }
-
-    setCurrentUser(user);
   };
 
   return (
     <div className="container d-flex justify-content-center align-items-center">
-      <div 
+      <div
         className="card shadow-lg border-0 rounded-4 p-4"
         style={{ maxWidth: "450px", width: "100%" }}
       >
-        
         <div className="text-center mb-4">
           <h2 className="fw-bold text-primary">Welcome Back</h2>
           <p className="text-muted small">Login to your account</p>
         </div>
 
         {error && (
-          <div className="alert alert-danger py-2 text-center">
-            {error}
-          </div>
+          <div className="alert alert-danger py-2 text-center">{error}</div>
         )}
 
         <form onSubmit={handleSubmit}>
-
           <div className="form-floating mb-3">
             <input
               type="email"
@@ -80,7 +84,6 @@ function Login({ setCurrentUser, onSwitch }) {
           <button className="btn btn-primary w-100 py-2 rounded-3 fw-semibold">
             Login
           </button>
-
         </form>
 
         <div className="text-center mt-4">
@@ -95,7 +98,6 @@ function Login({ setCurrentUser, onSwitch }) {
             </span>
           </small>
         </div>
-
       </div>
     </div>
   );
