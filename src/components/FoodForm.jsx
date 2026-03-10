@@ -20,7 +20,18 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
 
   useEffect(() => {
     if (editItem) {
-      setFormData(editItem);
+      setFormData({
+        foodName: editItem.food_name,
+        category: editItem.category,
+        calories: editItem.calories,
+        protein: editItem.protein,
+        carbs: editItem.carbs,
+        fats: editItem.fat,
+        servingQuantity: editItem.serving_quantity,
+        servingUnit: editItem.serving_unit,
+        vegetarian: String(editItem.is_vegetarian).toLowerCase() === "yes",
+        date: editItem.created_at,
+      });
     }
   }, [editItem]);
 
@@ -31,11 +42,6 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
-
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
   };
 
   const validate = () => {
@@ -43,17 +49,17 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
     const numberRegex = /^\d+(\.\d{1,2})?$/;
     const today = new Date().toISOString().split("T")[0];
 
-    if (!formData.foodName.trim())
-      newErrors.foodName = "Food name is required";
+    if (!formData.foodName.trim()) newErrors.foodName = "Food name is required";
 
-    if (!formData.category)
-      newErrors.category = "Category is required";
+    if (!formData.category) newErrors.category = "Category is required";
 
-    if (!formData.servingQuantity || !numberRegex.test(formData.servingQuantity))
+    if (
+      !formData.servingQuantity ||
+      !numberRegex.test(formData.servingQuantity)
+    )
       newErrors.servingQuantity = "Enter valid quantity";
 
-    if (!formData.servingUnit)
-      newErrors.servingUnit = "Select unit";
+    if (!formData.servingUnit) newErrors.servingUnit = "Select unit";
 
     if (!formData.calories || !numberRegex.test(formData.calories))
       newErrors.calories = "Enter valid calories";
@@ -67,10 +73,8 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
     if (!formData.fats || !numberRegex.test(formData.fats))
       newErrors.fats = "Enter valid fats";
 
-    if (!formData.date)
-      newErrors.date = "Date is required";
-    else if (formData.date > today)
-      newErrors.date = "Date cannot be future";
+    if (!formData.date) newErrors.date = "Date is required";
+    else if (formData.date > today) newErrors.date = "Date cannot be future";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -78,18 +82,25 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!validate()) return;
 
-    onSave({
-      ...formData,
-      servingQuantity: parseFloat(formData.servingQuantity).toFixed(2),
-      calories: parseFloat(formData.calories).toFixed(2),
-      protein: parseFloat(formData.protein).toFixed(2),
-      carbs: parseFloat(formData.carbs).toFixed(2),
-      fats: parseFloat(formData.fats).toFixed(2),
-    });
+    const payload = {
+      foodName: formData.foodName,
+      category: formData.category,
+      calories: formData.calories,
+      protein: formData.protein,
+      carbs: formData.carbs,
+      fats: formData.fats,
+      servingQuantity: formData.servingQuantity,
+      servingUnit: formData.servingUnit,
+      vegetarian: formData.vegetarian ? "yes" : "no",
+      date: formData.date,
+    };
 
-    setFormData(defaultState);
+    onSave(payload);
+
+    setFormData({ ...defaultState });
   };
 
   const handleClear = () => {
@@ -104,17 +115,16 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
     const reader = new FileReader();
 
     reader.onload = (event) => {
-      if (!event.target.result) return;
-
       const data = new Uint8Array(event.target.result);
       const workbook = XLSX.read(data, { type: "array" });
 
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
+
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       const formattedData = jsonData.map((row) => ({
-        id: Date.now() + Math.random(),
+
         foodName: row.foodName ?? "",
         category: row.category ?? "",
         calories: row.calories ?? 0,
@@ -123,25 +133,23 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
         fats: row.fats ?? 0,
         servingQuantity: row.servingQuantity ?? 0,
         servingUnit: row.servingUnit ?? "",
-        vegetarian:
-          row.vegetarian === "Yes" || row.vegetarian === true,
-        date:
-          row.date ?? new Date().toISOString().split("T")[0],
+        vegetarian: String(row.vegetarian).trim().toLowerCase() === "yes" ? "yes" : "no",
+        date: row.date ?? new Date().toISOString().split("T")[0],
       }));
 
       onSaveBulk(formattedData);
-      alert("Excel data uploaded successfully");
+
+      // alert("Excel uploaded successfully");
+
       e.target.value = null;
     };
 
     reader.readAsArrayBuffer(file);
-    
   };
 
   return (
     <div className="container-fluid">
       <div className="card shadow border-0 rounded-4">
-        
         <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
           <h5 className="mb-0 fw-bold">
             {editItem ? "Update Food Entry" : "Add Food Entry"}
@@ -152,11 +160,8 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
         </div>
 
         <div className="card-body p-4">
-
           <div className="mb-4">
-            <label className="form-label fw-semibold">
-              Upload Excel File
-            </label>
+            <label className="form-label fw-semibold">Upload Excel File</label>
             <input
               type="file"
               className="form-control"
@@ -166,7 +171,6 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
           </div>
 
           <form onSubmit={handleSubmit}>
-
             <div className="mb-3">
               <label className="form-label fw-semibold">Food Name</label>
               <input
@@ -223,9 +227,7 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
               </div>
 
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
-                  Serving Unit
-                </label>
+                <label className="form-label fw-semibold">Serving Unit</label>
                 <select
                   name="servingUnit"
                   className="form-select rounded-3"
@@ -240,9 +242,7 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                   <option>tbsp</option>
                 </select>
                 {errors.servingUnit && (
-                  <div className="text-danger small">
-                    {errors.servingUnit}
-                  </div>
+                  <div className="text-danger small">{errors.servingUnit}</div>
                 )}
               </div>
             </div>
@@ -262,9 +262,7 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                     onChange={handleChange}
                   />
                   {errors[field] && (
-                    <div className="text-danger small">
-                      {errors[field]}
-                    </div>
+                    <div className="text-danger small">{errors[field]}</div>
                   )}
                 </div>
               ))}
@@ -278,9 +276,7 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                 checked={formData.vegetarian}
                 onChange={handleChange}
               />
-              <label className="form-check-label fw-semibold">
-                Vegetarian
-              </label>
+              <label className="form-check-label fw-semibold">Vegetarian</label>
             </div>
 
             <div className="mb-4">
@@ -296,12 +292,9 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                 <div className="text-danger small">{errors.date}</div>
               )}
             </div>
- 
+
             <div className="d-flex flex-column flex-md-row gap-2">
-              <button
-                type="submit"
-                className="btn btn-success rounded-3 w-100"
-              >
+              <button type="submit" className="btn btn-success rounded-3 w-100">
                 {editItem ? "Update Food" : "Add Food"}
               </button>
 
@@ -315,7 +308,6 @@ function FoodForm({ onSave, editItem, onSaveBulk }) {
                 </button>
               )}
             </div>
-
           </form>
         </div>
       </div>
